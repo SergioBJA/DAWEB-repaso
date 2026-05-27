@@ -16,10 +16,14 @@ jobs:
       with:
         python-version: '3.10'
 
+    # Instalamos las dependencias necesarias en el entorno global
     - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install pylint fastapi uvicorn sqlalchemy pydantic
 
+    # Ejecutamos Pylint posicionándonos dentro de la carpeta inventario
     - name: Run Pylint
       run: |
+        cd inventario
         PYTHONPATH=. pylint app/main.py app/routers/items.py app/database.py app/models.py --disable=C,R,W0611,W0621
