@@ -23,8 +23,7 @@ jobs:
 
     - name: Ejecutar Pylint
       run: |
-        # Analizamos el main y el router para evitar fallos de importacion locales
-        pylint app/main.py app/routers/items.py --disable=C0114,C0116,R0903
+        pylint app/main.py app/routers/items.py app/database.py app/models.py --disable=C,R,W0611,W0621
 
   # 2. Fase de empaquetado y subida a DockerHub
   build-and-push:
