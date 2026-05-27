@@ -5,78 +5,21 @@ on:
     branches: [ main ]
 
 jobs:
-  # 1. Fase opcional/obligatoria de Calidad (Linting)
   linting:
     runs-on: ubuntu-latest
     steps:
-    - name: Descargar codigo
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Configurar Python
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - name: Instalar dependencias para pruebas
+    - name: Install dependencies
       run: |
         pip install pylint fastapi uvicorn sqlalchemy pydantic
 
-    - name: Ejecutar Pylint
+    - name: Run Pylint
       run: |
-        pylint app/main.py app/routers/items.py app/database.py app/models.py --disable=C,R,W0611,W0621
-
-  # 2. Fase de empaquetado y subida a DockerHub
-  build-and-push:
-    needs: linting
-    runs-on: ubuntu-latest
-    steps:
-    - name: Descargar codigo
-      uses: actions/checkout@v3
-
-    - name: Iniciar sesion en DockerHub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.REC_DHUB_USER }}
-        password: ${{ secrets.REC_DHUB_TOKEN }}
-
-    - name: Construir y subir imagen Docker
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        # Usamos el nombre 'apirec' tal y como pide el Apartado 2 del PDF
-        tags: ${{ secrets.REC_DHUB_USER }}/apirec:latest
-
-  # 3. Despliegue automatico en AWS mediante SSH
-  deploy-to-aws:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-    - name: Descargar codigo (para el docker-compose)
-      uses: actions/checkout@v3
-
-    - name: Desplegar en EC2 via SSH
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.REC_EC2_IP }}
-        username: ${{ secrets.REC_EC2_USER }}
-        key: ${{ secrets.REC_EC2_KEY }}
-        script: |
-          # 1. Creamos la carpeta del examen en AWS si no existe
-          mkdir -p ~/examen
-          cd ~/examen
-          
-          # 2. Escribimos el contenido del docker-compose actualizado dinamicamente
-          cat << 'EOF' > docker-compose.yml
-          services:
-            apiexamen:
-              image: ${{ secrets.REC_DHUB_USER }}/apirec:latest
-              ports:
-                - 80:8000
-              restart: always
-          EOF
-          
-          # 3. Descargamos la ultima imagen y levantamos el entorno limpio
-          sudo docker compose pull
-          sudo docker compose up -d
+        PYTHONPATH=. pylint app/main.py app/routers/items.py app/database.py app/models.py --disable=C,R,W0611,W0621
